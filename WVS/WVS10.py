@@ -183,7 +183,7 @@ def QueryFromWVS(sql=None):
     ######################################sql语句#############################################
     if sql == None:
         while True:
-            index=u'''
+            index='''
             1.Query All High Level Vuln
             2.Query Vulns by Name todo
             3.Delete Tasks that have no Vuln Found todo
