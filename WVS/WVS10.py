@@ -92,7 +92,7 @@ Web Application Firewall detected
 WebLogic Server Side Request Forgery
 '''.splitlines()
 
-def Add(block):#
+def DoAdd(block):#
     if block and len(block)<=250:#dict of urls
         now = datetime.datetime.now() + datetime.timedelta(minutes=+3)
         datestr = now.strftime("%m/%d/%Y")
@@ -129,7 +129,7 @@ def AddToWVS(url_list):
     while True:
         if len(url_list) - start >=250:
             block = url_list[start:start + 250]
-            if Add(block):
+            if DoAdd(block):
                 start += 250
                 endindex = start
                 continue
@@ -138,7 +138,7 @@ def AddToWVS(url_list):
                 break
         elif len(url_list) - start >0:
             block = url_list[start:-1]
-            if Add(block):
+            if DoAdd(block):
                 endindex = start + len(block)
             else:
                 endindex = start
@@ -149,7 +149,7 @@ def AddToWVS(url_list):
     return endindex
 
 
-def QueryFromWVS(sql):
+def DoQuery(sql):
     MDB = 'C:\\ProgramData\\Acunetix WVS 10\\Data\\Database\\vulnscanresults.mdb'
     DRV = '{Microsoft Access Driver (*.mdb)}'
     PWD = 'pw'
@@ -163,9 +163,8 @@ def QueryFromWVS(sql):
     con.close()
     return rows
 
-if __name__ == '__main__':
-
-    ######################################sql语句#############################################
+def QueryFromWVS(sql=None):
+######################################sql语句#############################################
     # 查找存在指定漏洞的URL
     specified_sql_query= '''
     select WVS_scans.starturl,WVS_alerts.algroup
@@ -182,6 +181,33 @@ if __name__ == '__main__':
     vuln_names = '''SELECT distinct WVS_alerts.algroup from WVS_alerts;'''
 
     ######################################sql语句#############################################
+    if sql == None:
+        while True:
+            index=u'''
+            1.Query All High Level Vuln
+            2.Query Vulns by Name todo
+            3.Delete Tasks that have no Vuln Found todo
+            4.back
+            '''
+            choice = raw_input(index)
+            if choice == "1" :
+                sql = high_vuln_query
+                print DoQuery(sql)
+            elif choice == "2" :
+                sql = specified_sql_query
+                print DoQuery(sql)
+            elif choice == "3":
+                pass
+            elif choice == "4":
+                break
+            else:
+                continue
+
+
+
+if __name__ == '__main__':
+
+
     rows = QueryFromWVS(vuln_names)
     with open('mytable.csv', 'w') as fou:
         csv_writer = csv.writer(fou) # default field-delimiter is ","
