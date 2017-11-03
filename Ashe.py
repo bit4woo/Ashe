@@ -62,14 +62,25 @@ def interactive():
                         continue
                 elif choice == "2":
                     xmlfile = raw_input("parse xml, please input the xml file:==>")
+                    xmlfile = xmlfile.strip()
                     if os.path.isfile(xmlfile):
-                        xml_file = os.path.join(task_dir, xmlfile)
-                        shutil.copy(xmlfile,xml_file)
+                        des_xml_file = os.path.join(task_dir, os.path.basename(xmlfile))
+                        if os.path.exists(des_xml_file):
+                            copy_choice = raw_input("The file already exist,Overwirte or Keep two(O/k)?")
+                            if copy_choice.lower() in ["","o"]:
+                                shutil.copy(xmlfile, des_xml_file)
+                            elif copy_choice.lower() == "k":
+                                des_xml_file = os.path.join(task_dir, os.path.basename(xmlfile).split(".")[0]+"_1"+os.path.basename(xmlfile).split(".")[1])
+                                shutil.copy(xmlfile, des_xml_file)
+                            else:
+                                continue
                         url_list = GetHttp(xmlfile)
                         fp = open(urls_file, "w")
                         fp.writelines("\n".join(url_list))
                         fp.close()
-                    continue
+                    else:
+                        print "File do not exist!"
+                        continue
                 elif choice == "3":
                     if os.path.isfile(urls_file):
                         fp = open(urls_file,"r")
@@ -94,7 +105,6 @@ def interactive():
                     break
                 else:
                     continue
-
 
 if __name__ == "__main__":
     interactive()
