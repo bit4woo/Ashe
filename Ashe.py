@@ -15,6 +15,7 @@ def interactive():
 
     task_home_dir = os.path.join(os.path.dirname(__file__), "task")
     while True:
+        # print already existed task
         tasks = os.listdir(task_home_dir)
         for task in tasks:
             if os.path.isfile(task):
@@ -23,8 +24,9 @@ def interactive():
         for item in tasks:
             print item
 
-        task_name = raw_input("\n\n*.Input a existed task name to operate it or Input a new task name to create.\n*.Input x to exit Ashe.\n==>")
-        if task_name == 'x':
+        print("\n\n*.Input a existed task name to operate it or Input a new task name to create.\n*.Input x to exit Ashe.\n")
+        task_name = raw_input("==>")
+        if task_name.lower() in ['x','back']:
             break
         elif task_name == "":
             continue
@@ -68,12 +70,14 @@ def interactive():
                         if os.path.exists(des_xml_file):
                             copy_choice = raw_input("The file already exist,Overwirte or Keep two(O/k)?")
                             if copy_choice.lower() in ["","o"]:
-                                shutil.copy(xmlfile, des_xml_file)
+                                shutil.copyfile(xmlfile, des_xml_file) # overwrite
                             elif copy_choice.lower() == "k":
                                 des_xml_file = os.path.join(task_dir, os.path.basename(xmlfile).split(".")[0]+"_1"+os.path.basename(xmlfile).split(".")[1])
                                 shutil.copy(xmlfile, des_xml_file)
                             else:
                                 continue
+                        else:
+                            shutil.copy(xmlfile, des_xml_file)
                         url_list = GetHttp(xmlfile)
                         fp = open(urls_file, "w")
                         fp.writelines("\n".join(url_list))
@@ -101,7 +105,7 @@ def interactive():
                         fp.close()
                 elif choice == "4":
                     QueryFromWVS()
-                elif choice == "5":
+                elif choice.lower() in ["5",'back','exit']:
                     break
                 else:
                     continue
