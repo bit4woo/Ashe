@@ -9,8 +9,7 @@ from lib.common import *
 import datetime
 import requests
 
-possible_vuln = '''
-.htaccess file readable
+possible_vuln = '''.htaccess file readable
 Apache httpd remote denial of service
 Apache Tomcat examples directory vulnerabilities
 Apache Tomcat sample files
@@ -90,7 +89,7 @@ User credentials are sent in clear text
 Vulnerable Javascript library
 Web Application Firewall detected
 WebLogic Server Side Request Forgery
-'''.splitlines()
+'''.replace(" ","_").splitlines()
 
 def DoAdd(block):#
     if block and len(block)<=250:#dict of urls
@@ -126,6 +125,7 @@ def DoAdd(block):#
 def AddToWVS(url_list):
     url_list = strip_list(url_list)
     start = 0
+    endindex = 0
     while True:
         if len(url_list) - start >=250:
             block = url_list[start:start + 250]
@@ -145,6 +145,7 @@ def AddToWVS(url_list):
                 break
         else:
             print "Error"
+            break
     print "{0} urls added to WVS".format(endindex)
     return endindex
 
@@ -157,8 +158,13 @@ def DoQuery(sql):
     # connect to db
     con = pyodbc.connect('DRIVER={};DBQ={};PWD={}'.format(DRV,MDB,PWD))
     cur = con.cursor()
-
-    rows = cur.execute(sql).fetchall()
+    #print sql.lower().strip()
+    if sql.lower().strip().startswith("select"):
+        rows = cur.execute(sql).fetchall()
+    elif sql.lower().strip().startswith("delete"):
+        rows = cur.execute(sql).rowcount
+    else:
+        rows = cur.execute(sql).fetchall()
     cur.close()
     con.close()
     return rows
@@ -166,13 +172,13 @@ def DoQuery(sql):
 def QueryFromWVS(sql=None):
 ######################################sql语句#############################################
     # 查找存在指定漏洞的URL
-    specified_sql_query= '''
-    select WVS_scans.starturl,WVS_alerts.algroup
+    specified_sql_query= '''select WVS_scans.starturl,WVS_alerts.algroup
      FROM WVS_alerts LEFT JOIN WVS_scans ON WVS_alerts.scid = WVS_scans.scid where algroup like '%{0}%';
-     '''.format('WebLogic Server Side Request For')
+     '''
+    #.format('WebLogic Server Side Request For')
 
     # 所有高危漏洞查询
-    high_vuln_query = '''SELECT WVS_alerts.algroup, WVS_scans.starturl, Max(WVS_scans.starttime) AS starttime, WVS_alerts.severity
+    high_vuln_query = '''SELECT WVS_alerts.algroup,WVS_scans.starturl,Max(WVS_scans.starttime) AS starttime
     FROM WVS_alerts LEFT JOIN WVS_scans ON WVS_alerts.scid = WVS_scans.scid
     WHERE (((WVS_alerts.severity)>=3))
     GROUP BY WVS_alerts.algroup, WVS_scans.starturl, WVS_alerts.severity;
@@ -180,26 +186,39 @@ def QueryFromWVS(sql=None):
 
     vuln_names = '''SELECT distinct WVS_alerts.algroup from WVS_alerts;'''
 
+    # 删除所有没有漏洞的扫描任务
+    del_useless_task = """delete
+    FROM wvs_scans
+    WHERE (((wvs_scans.[scid]) Not In (select scid from wvs_alerts )));
+    """
+
     ######################################sql语句#############################################
     if sql == None:
+        index = '''
+        1.Query All High Level Vuln
+        2.Query Vulns by Name //tab to complish
+        3.Delete Tasks that have no Vuln Found
+        4.back
+        '''
+        print index
         while True:
-            index='''
-            1.Query All High Level Vuln
-            2.Query Vulns by Name todo
-            3.Delete Tasks that have no Vuln Found todo
-            4.back
-            '''
-            choice = raw_input(index)
+            choice = raw_input("==>")
             if choice == "1" :
                 sql = high_vuln_query
                 print DoQuery(sql)
             elif choice == "2" :
-                sql = specified_sql_query
+                readline.parse_and_bind("tab: complete")
+                readline.set_completer(tabCompleter(possible_vuln).WVS_query_completer)
+                vuln_name = raw_input("Please input the vuln name that you want to search.tab to complish\n==>")
+                sql = specified_sql_query.format(vuln_name)
                 print DoQuery(sql)
             elif choice == "3":
-                pass
-            elif choice == "4":
+                sql = del_useless_task
+                print DoQuery(sql)
+            elif choice.lower() in ["4","exit","x"]:
                 break
+            elif choice in ["?","help"]:
+                print index
             else:
                 continue
 
@@ -207,8 +226,8 @@ def QueryFromWVS(sql=None):
 
 if __name__ == '__main__':
 
-
-    rows = QueryFromWVS(vuln_names)
+    print possible_vuln
+    rows = QueryFromWVS()
     with open('mytable.csv', 'w') as fou:
         csv_writer = csv.writer(fou) # default field-delimiter is ","
         csv_writer.writerows(rows)

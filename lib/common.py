@@ -16,14 +16,6 @@ def strip_list(inputlist):
     else:
         print "the input should be a list"
 
-class colors:
-    white = "\033[1;37m"
-    normal = "\033[0;00m"
-    red = "\033[1;31m"
-    blue = "\033[1;34m"
-    green = "\033[1;32m"
-    lightblue = "\033[0;34m"
-
 class tabCompleter():
     def __init__(self,CMD_pool):
         self.cmd = CMD_pool
@@ -33,7 +25,7 @@ class tabCompleter():
         return [x for x in glob.glob(text+'*')][state]
 
     def WVS_query_completer(self,text, state):
-        options = [cmd for cmd in self.cmd if cmd.startswith(text)]
+        options = [cmd for cmd in self.cmd if text in cmd.lower()]
         if state < len(options):
             return options[state]
         else:
@@ -42,7 +34,14 @@ class tabCompleter():
     readline.parse_and_bind("tab: complete")
     readline.set_completer(WVS_query_completer)
 
+
 def nowstr():
     now = datetime.datetime.now() + datetime.timedelta(minutes=+3)
     now = datetime.datetime.now()
     datestr = now.strftime("%m/%d/%Y")
+
+if __name__ == "__main__":
+    li = ['aa___aaaaaa','b___bbbbbbbb','ccc___cccccc']
+    readline.parse_and_bind("tab: complete")
+    readline.set_completer(tabCompleter(li).WVS_query_completer)
+    x = raw_input("==>")

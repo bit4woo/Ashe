@@ -4,14 +4,16 @@ __author__ = 'bit4'
 __github__ = 'https://github.com/bit4woo'
 
 import os.path
-from lib.xmlparser import *
-from WVS.WVS10 import *
 import shutil
+
+from lib.WVS10 import *
+from lib.color import color
+from lib.xmlparser import *
 
 
 def interactive():
     #t = tabCompleter()
-    print "\n\nWelcome to interactive mode!\n\n"
+    print color.G+"\n\nWelcome to interactive mode!\n\n"
 
     task_home_dir = os.path.join(os.path.dirname(__file__), "task")
     while True:
@@ -20,13 +22,19 @@ def interactive():
         for task in tasks:
             if os.path.isfile(task):
                 tasks.remove(task)
-        print "{0} tasks existed:".format(len(tasks))
+        print "{0}[{1}]{2} tasks existed:".format(color.R,len(tasks),color.G)
         for item in tasks:
             print item
 
-        print("\n\n*.Input a existed task name to operate it or Input a new task name to create.\n*.Input x to exit Ashe.\n")
+        print(color.Y+"\n\n"
+              "*.Input a existed task name to operate it or Input a new task name to create.\n"
+              "*.Input q to query vuln from wvs.\n"
+              "*.Input x to exit Ashe.\n"
+              "\n"+color.W)
         task_name = raw_input("==>")
-        if task_name.lower() in ['x','back']:
+        if task_name.lower() == "q":
+            QueryFromWVS()
+        elif task_name.lower() in ['x','back']:
             break
         elif task_name == "":
             continue
@@ -41,20 +49,18 @@ def interactive():
                 os.mkdir(task_dir)
                 print "task {0} created, chose what to do:".format(task_name)
 
-            urls_file = os.path.join(task_dir, "urls.txt")
-            urls_scanned_file = os.path.join(task_dir, "urls_scanned.txt")
+            urls_file = os.path.join(task_dir, "urls_by_ashe.txt")
+            urls_scanned_file = os.path.join(task_dir, "urls_scanned_by_ashe.txt")
             while True:
                 index = '''
                 [Current Task: {0}]
                 1. Delete this task
                 2. Input the xml file and parse to urls
                 3. Add urls to scan
-                4. Query high vuln from wvs
-                5. back
+                4. back
                 ==>
                 '''.format(task_name)
                 choice = raw_input(index)
-
                 if choice == "1":
                     delete = raw_input("Are you sure to DELETE this task?(y/N)")
                     if delete.lower() in ["y","yes"]:
@@ -103,9 +109,7 @@ def interactive():
                         fp.writelines(urls_scanned)
                         fp.write("\n___________{0}_________\n".format(datetime.datetime.now().strftime("%m/%d/%Y %H%M")))
                         fp.close()
-                elif choice == "4":
-                    QueryFromWVS()
-                elif choice.lower() in ["5",'back','exit']:
+                elif choice.lower() in ["4",'back','exit']:
                     break
                 else:
                     continue
