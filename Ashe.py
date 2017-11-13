@@ -9,6 +9,7 @@ import shutil
 from lib.WVS10 import *
 from lib.color import color
 from lib.xmlparser import *
+from lib.URLhelper import *
 
 
 def interactive():
@@ -56,8 +57,9 @@ def interactive():
                 [Current Task: {0}]
                 1. Delete this task
                 2. Input the xml file and parse to urls
-                3. Add urls to scan
-                4. back
+                3. Input Teemo result file to replace it to domain 
+                4. Add urls to scan
+                5. back
                 ==>
                 '''.format(task_name)
                 choice = raw_input(index)
@@ -69,7 +71,7 @@ def interactive():
                     else:
                         continue
                 elif choice == "2":
-                    xmlfile = raw_input("parse xml, please input the xml file:==>")
+                    xmlfile = raw_input("parse xml, please input the xml file\n==>")
                     xmlfile = xmlfile.strip()
                     if os.path.isfile(xmlfile):
                         des_xml_file = os.path.join(task_dir, os.path.basename(xmlfile))
@@ -94,6 +96,22 @@ def interactive():
                         print "File do not exist!"
                         continue
                 elif choice == "3":
+                    IP_domain_file = raw_input("Input the file that contains domain and IP relationship(Teemo Result File)\n==>")
+                    IP_domain_file = IP_domain_file.strip()
+                    if os.path.isfile(IP_domain_file):
+                        des_IP_Domain_file = os.path.join(task_dir, "Teemo-"+os.path.basename(IP_domain_file))
+                        if os.path.abspath(IP_domain_file) == os.path.abspath(des_IP_Domain_file):# same file
+                            pass
+                        elif os.path.exists(des_IP_Domain_file):
+                            shutil.copyfile(IP_domain_file, des_IP_Domain_file) # overwrite
+                        else:
+                            shutil.copy(IP_domain_file, des_IP_Domain_file)
+                        IP2domain(urls_file,des_IP_Domain_file)
+                    else:
+                        print "File do not exist!"
+                        continue
+
+                elif choice == "4":
                     if os.path.isfile(urls_file):
                         fp = open(urls_file,"r")
                         urls = fp.readlines()
@@ -114,7 +132,7 @@ def interactive():
                         break
                     else:
                         print "{0} not found!".format(urls_file)
-                elif choice.lower() in ["4",'back','exit']:
+                elif choice.lower() in ["5",'back','exit']:
                     break
                 else:
                     continue

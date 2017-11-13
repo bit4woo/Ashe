@@ -31,7 +31,16 @@ def GetHttp(xmlfilename):
                     try:
                         service = port.getElementsByTagName("service")[0]
                         name = service.getAttribute("name")
-                        if "http" == name or "https" == name:
+                        if "http" == name:
+                            try:#<service name="http" product="nginx" tunnel="ssl" method="probed" conf="10">
+                                tunnel=service.getAttribute("tunnel")
+                                if tunnel == "ssl":
+                                    IP_URL = "{0}://{1}:{2}".format("https", addr, portid)
+                                    result_list.append(IP_URL)
+                            except:
+                                IP_URL =  "{0}://{1}:{2}".format(name,addr,portid)
+                                result_list.append(IP_URL)
+                        elif "https" == name:
                             IP_URL =  "{0}://{1}:{2}".format(name,addr,portid)
                             result_list.append(IP_URL)
                         elif "http" in name: #http-proxy、http-alt
@@ -47,7 +56,6 @@ def GetHttp(xmlfilename):
                                     result_list.append(IP_URL)
                             except:
                                 pass
-
                     except Exception as e:
                         pass
     return list(set(result_list))
@@ -125,24 +133,6 @@ def GetService(xmlfilename):
                     else:
                         services[name] = {tmp_port:iplist}
     loading = True
-
-
-
-def IPorDomain(domain_ip_filename, IP_URL_list):
-    result_list = IP_URL_list
-    #print result_list
-    domain_ip_list =  open(domain_ip_filename,"r").readlines()
-    for IP_URL in IP_URL_list:
-        IP = IP_URL.split("//")[1].split(":")[0]
-        for domain_ip in domain_ip_list:
-            domain_ip =  domain_ip.strip()
-            if IP in domain_ip and len(domain_ip.split())>=2:
-                domain = domain_ip.split()[0]
-                newitem = IP_URL.replace(IP,domain)
-                result_list.append(newitem)
-                if IP_URL in IP_URL_list:
-                    result_list.remove(IP_URL)
-    return list(set(result_list))
 
 
 
