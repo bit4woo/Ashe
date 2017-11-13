@@ -49,8 +49,8 @@ def interactive():
                 os.mkdir(task_dir)
                 print "task {0} created, chose what to do:".format(task_name)
 
-            urls_file = os.path.join(task_dir, "urls_by_ashe.txt")
-            urls_scanned_file = os.path.join(task_dir, "urls_scanned_by_ashe.txt")
+            urls_file = os.path.join(task_dir, "{0}_urls_by_ashe.txt".format(task_name))
+            urls_scanned_file = os.path.join(task_dir, "{0}_urls_scanned_by_ashe.txt".format(task_name))
             while True:
                 index = '''
                 [Current Task: {0}]
@@ -73,11 +73,13 @@ def interactive():
                     xmlfile = xmlfile.strip()
                     if os.path.isfile(xmlfile):
                         des_xml_file = os.path.join(task_dir, os.path.basename(xmlfile))
-                        if os.path.exists(des_xml_file):
-                            copy_choice = raw_input("The file already exist,Overwirte or Keep two(O/k)?")
+                        if os.path.abspath(xmlfile) == os.path.abspath(des_xml_file):# same file
+                            pass
+                        elif os.path.exists(des_xml_file):
+                            copy_choice = raw_input("The file already exist,Overwirte or keep Two(O/t)?")
                             if copy_choice.lower() in ["","o"]:
                                 shutil.copyfile(xmlfile, des_xml_file) # overwrite
-                            elif copy_choice.lower() == "k":
+                            elif copy_choice.lower() == "t":
                                 des_xml_file = os.path.join(task_dir, os.path.basename(xmlfile).split(".")[0]+"_1"+os.path.basename(xmlfile).split(".")[1])
                                 shutil.copy(xmlfile, des_xml_file)
                             else:
@@ -96,19 +98,22 @@ def interactive():
                         fp = open(urls_file,"r")
                         urls = fp.readlines()
                         fp.close()
-                        number_added = AddToWVS(urls)
-                        print "{0} urls added".format(number_added)
-                        if number_added >= 0:
-                            urls_left = urls[number_added+1:-1]
-                            urls_scanned = urls[0:number_added]
+                        end_index = AddToWVS(urls)
+                        print "{0} urls added".format(end_index+1)
+                        if end_index >= 0:
+                            urls_left = urls[end_index+1:-1]
+                            urls_scanned = urls[0:end_index]
                         fp = open(urls_file,"w")
                         fp.writelines(urls_left)
                         fp.close()
 
                         fp = open(urls_scanned_file,"a")
                         fp.writelines(urls_scanned)
-                        fp.write("\n___________{0}_________\n".format(datetime.datetime.now().strftime("%m/%d/%Y %H%M")))
+                        fp.write("____above urls added to scan at {0}______\n".format(datetime.datetime.now().strftime("%m/%d/%Y %H%M")))
                         fp.close()
+                        break
+                    else:
+                        print "{0} not found!".format(urls_file)
                 elif choice.lower() in ["4",'back','exit']:
                     break
                 else:

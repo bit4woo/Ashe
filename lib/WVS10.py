@@ -116,7 +116,7 @@ def DoAdd(block):#
 
         response = requests.post(url="http://localhost:8183/api/addScan", headers=header, json=data)
         print response.content
-        if response.status_code == 200:
+        if response.status_code == 200 and "OK" in response.content:
             return True
         else:
             return False
@@ -124,29 +124,24 @@ def DoAdd(block):#
 
 def AddToWVS(url_list):
     url_list = strip_list(url_list)
-    start = 0
-    endindex = 0
+    start = 0  #list index
+    endindex = 0 #list index
+    last_index = len(url_list) - 1
     while True:
-        if len(url_list) - start >=250:
-            block = url_list[start:start + 250]
-            if DoAdd(block):
-                start += 250
-                endindex = start
-                continue
-            else:
-                endindex = start
-                break
-        elif len(url_list) - start >0:
-            block = url_list[start:-1]
-            if DoAdd(block):
-                endindex = start + len(block)
-            else:
-                endindex = start
-                break
+        if last_index - start >=250:
+            endindex = start +250
+        elif last_index - start >0:
+            endindex = last_index
         else:
-            print "Error"
             break
-    print "{0} urls added to WVS".format(endindex)
+
+        block = url_list[start:endindex]
+        if DoAdd(block) and last_index > endindex:
+            start += 250
+            continue
+        else:
+            break
+    #print "{0} urls added to WVS".format(endindex+1)
     return endindex
 
 
