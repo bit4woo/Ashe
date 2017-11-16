@@ -57,7 +57,7 @@ def interactive():
                 [Current Task: {0}]
                 1. Delete this task
                 2. Input the xml file and parse to urls
-                3. Input Teemo result file to replace it to domain 
+                3. Input Teemo result file to replace IP to domain 
                 4. Add urls to scan
                 5. back
                 ==>
@@ -89,7 +89,11 @@ def interactive():
                         else:
                             shutil.copy(xmlfile, des_xml_file)
                         url_list = GetHttp(xmlfile)
-                        fp = open(urls_file, "w")
+                        fp = open(urls_file, "a+") #add model,may mutipul result in a task
+                        if len(fp.readlines()) ==0:
+                            pass
+                        else:
+                            fp.write("\n")
                         fp.writelines("\n".join(url_list))
                         fp.close()
                     else:
