@@ -1,3 +1,4 @@
 pyodbc
 requests
 pyreadline
+prompt_toolkit

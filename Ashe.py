@@ -10,7 +10,9 @@ from lib.WVS10 import *
 from lib.color import color
 from lib.xmlparser import *
 from lib.URLhelper import *
-
+from prompt_toolkit.shortcuts import prompt
+from prompt_toolkit.contrib.completers import WordCompleter
+from prompt_toolkit.shortcuts import confirm
 
 def interactive():
     #t = tabCompleter()
@@ -32,7 +34,8 @@ def interactive():
               "*.Input q to query vuln from wvs.\n"
               "*.Input x to exit Ashe.\n"
               "\n"+color.W)
-        task_name = raw_input("==>")
+        task_completer = WordCompleter(tasks, ignore_case=True)
+        task_name = prompt(u"==>",completer=task_completer)
         if task_name.lower() == "q":
             QueryFromWVS()
         elif task_name.lower() in ['x','back']:
@@ -43,8 +46,10 @@ def interactive():
             task_dir = os.path.join(task_home_dir,task_name)
 
             if os.path.isdir(task_dir):
-                choice = raw_input("the task already exist, operate this task? (Y/n)")
-                if choice.lower() not in ["y","yes",""]:
+                #choice = raw_input("the task already exist, operate this task? (Y/n)",)
+                choice = confirm(u"the task already exist, operate this task? (Y/n)", )
+                #if choice.lower() not in ["y","yes",""]:
+                if choice:
                     continue
             else:
                 os.mkdir(task_dir)
