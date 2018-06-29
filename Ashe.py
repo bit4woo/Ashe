@@ -46,10 +46,10 @@ def interactive():
             task_dir = os.path.join(task_home_dir,task_name)
 
             if os.path.isdir(task_dir):
-                #choice = raw_input("the task already exist, operate this task? (Y/n)",)
-                choice = confirm(u"the task already exist, operate this task? (Y/n)", )
-                #if choice.lower() not in ["y","yes",""]:
-                if choice:
+                choice = raw_input("the task already exist, operate this task? (Y/n)",)
+                #choice = confirm(u"the task already exist, operate this task? (Y/n)", )
+                if choice.lower() not in ["y","yes",""]:
+                #if choice:
                     continue
             else:
                 os.mkdir(task_dir)
