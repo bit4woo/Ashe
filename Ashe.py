@@ -12,10 +12,19 @@ from lib.xmlparser import *
 from lib.URLhelper import *
 from prompt_toolkit.shortcuts import prompt
 from prompt_toolkit.contrib.completers import WordCompleter
-from prompt_toolkit.shortcuts import confirm
+from prompt_toolkit.contrib.completers import PathCompleter
+
+
+taskDealIndex = '''
+[Current Task: {0}]
+1. Delete this task
+2. Input the xml file and parse to urls
+3. Input Teemo result file to replace IP to domain 
+4. Add urls to scan
+5. back
+Task({0}):==>'''
 
 def interactive():
-    #t = tabCompleter()
     print color.G+"\n\nWelcome to interactive mode!\n\n"
 
     task_home_dir = os.path.join(os.path.dirname(__file__), "task")
@@ -46,10 +55,8 @@ def interactive():
             task_dir = os.path.join(task_home_dir,task_name)
 
             if os.path.isdir(task_dir):
-                choice = raw_input("the task already exist, operate this task? (Y/n)",)
-                #choice = confirm(u"the task already exist, operate this task? (Y/n)", )
+                choice = prompt(u"the task already exist, operate this task? (Y/n)",)
                 if choice.lower() not in ["y","yes",""]:
-                #if choice:
                     continue
             else:
                 os.mkdir(task_dir)
@@ -58,32 +65,25 @@ def interactive():
             urls_file = os.path.join(task_dir, "{0}_urls_by_ashe.txt".format(task_name))
             urls_scanned_file = os.path.join(task_dir, "{0}_urls_scanned_by_ashe.txt".format(task_name))
             while True:
-                index = '''
-                [Current Task: {0}]
-                1. Delete this task
-                2. Input the xml file and parse to urls
-                3. Input Teemo result file to replace IP to domain 
-                4. Add urls to scan
-                5. back
-                ==>
-                '''.format(task_name)
-                choice = raw_input(index)
+                index = taskDealIndex.format(task_name)
+                choice = prompt(unicode(index))
                 if choice == "1":
-                    delete = raw_input("Are you sure to DELETE this task?(y/N)")
+                    delete = prompt(u"Are you sure to DELETE this task?(y/N)")
                     if delete.lower() in ["y","yes"]:
                         shutil.rmtree(task_dir)
                         break
                     else:
                         continue
                 elif choice == "2":
-                    xmlfile = raw_input("parse xml, please input the xml file\n==>")
+                    path_completer = PathCompleter()
+                    xmlfile = prompt(u"parse xml, please input the xml file==>",path_completer)
                     xmlfile = xmlfile.strip()
                     if os.path.isfile(xmlfile):
                         des_xml_file = os.path.join(task_dir, os.path.basename(xmlfile))
                         if os.path.abspath(xmlfile) == os.path.abspath(des_xml_file):# same file
                             pass
                         elif os.path.exists(des_xml_file):
-                            copy_choice = raw_input("The file already exist,Overwirte or keep Two(O/t)?")
+                            copy_choice = prompt(u"The file already exist,Overwirte or keep Two(O/t)?")
                             if copy_choice.lower() in ["","o"]:
                                 shutil.copyfile(xmlfile, des_xml_file) # overwrite
                             elif copy_choice.lower() == "t":
@@ -94,6 +94,7 @@ def interactive():
                         else:
                             shutil.copy(xmlfile, des_xml_file)
                         url_list = GetHttp(xmlfile)
+                        print(url_list)
                         fp = open(urls_file, "a+") #add model,may mutipul result in a task
                         if len(fp.readlines()) ==0:
                             pass
@@ -105,7 +106,7 @@ def interactive():
                         print "File do not exist!"
                         continue
                 elif choice == "3":
-                    IP_domain_file = raw_input("Input the file that contains domain and IP relationship(Teemo Result File)\n==>")
+                    IP_domain_file = prompt(u"Input the file that contains domain and IP relationship(Teemo Result File)\n==>")
                     IP_domain_file = IP_domain_file.strip()
                     if os.path.isfile(IP_domain_file):
                         des_IP_Domain_file = os.path.join(task_dir, "Teemo-"+os.path.basename(IP_domain_file))
