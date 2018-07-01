@@ -13,6 +13,8 @@ from lib.URLhelper import *
 from prompt_toolkit.shortcuts import prompt
 from prompt_toolkit.contrib.completers import WordCompleter
 from prompt_toolkit.contrib.completers import PathCompleter
+from prompt_toolkit.history import FileHistory
+from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 
 
 taskDealIndex = '''
@@ -76,7 +78,8 @@ def interactive():
                         continue
                 elif choice == "2":
                     path_completer = PathCompleter()
-                    xmlfile = prompt(u"parse xml, please input the xml file==>",path_completer)
+                    xmlfile = prompt(u"parse xml, please input the xml file==>",completer = path_completer,history=FileHistory('history.txt'),
+                        auto_suggest=AutoSuggestFromHistory(),)
                     xmlfile = xmlfile.strip()
                     if os.path.isfile(xmlfile):
                         des_xml_file = os.path.join(task_dir, os.path.basename(xmlfile))
@@ -95,7 +98,10 @@ def interactive():
                             shutil.copy(xmlfile, des_xml_file)
                         url_list = GetHttp(xmlfile)
                         print(url_list)
-                        fp = open(urls_file, "a+") #add model,may mutipul result in a task
+                        if copy_choice.lower() in ["", "o"]:
+                            fp = open(urls_file, "a") #overwrite
+                        else:
+                            fp = open(urls_file, "a+")  # add model,may mutipul result in a task
                         if len(fp.readlines()) ==0:
                             pass
                         else:
