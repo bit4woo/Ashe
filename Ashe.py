@@ -98,10 +98,7 @@ def interactive():
                             shutil.copy(xmlfile, des_xml_file)
                         url_list = GetHttp(xmlfile)
                         print(url_list)
-                        if copy_choice.lower() in ["", "o"]:
-                            fp = open(urls_file, "a") #overwrite
-                        else:
-                            fp = open(urls_file, "a+")  # add model,may mutipul result in a task
+                        fp = open(urls_file, "a+")
                         if len(fp.readlines()) ==0:
                             pass
                         else:
