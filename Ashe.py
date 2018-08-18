@@ -5,7 +5,10 @@ __github__ = 'https://github.com/bit4woo'
 
 import os.path
 import shutil
+import datetime
 
+from lib.config import *
+from lib.WVS11 import *
 from lib.WVS10 import *
 from lib.color import color
 from lib.xmlparser import *
@@ -48,7 +51,8 @@ def interactive():
         task_completer = WordCompleter(tasks, ignore_case=True)
         task_name = prompt(u"==>",completer=task_completer)
         if task_name.lower() == "q":
-            QueryFromWVS()
+            #QueryFromWVS()
+            pass
         elif task_name.lower() in ['x','back']:
             break
         elif task_name == "":
@@ -129,7 +133,11 @@ def interactive():
                         fp = open(urls_file,"r")
                         urls = fp.readlines()
                         fp.close()
-                        end_index = AddToWVS(urls)
+                        end_index=-1
+                        if SCANNER.lower()=="wvs11":
+                            end_index = AddScans(urls)
+                        elif SCANNER.lower() =="wvs10":
+                            end_index = AddToWVS(urls)
                         print "{0} urls added".format(end_index+1)
                         if end_index >= 0:
                             urls_left = urls[end_index+1:-1]

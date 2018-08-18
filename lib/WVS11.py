@@ -1,176 +1,171 @@
+# !/usr/bin/env python
 # -*- coding:utf-8 -*-
-import urllib2
-import ssl
+__author__ = 'bit4'
+__github__ = 'https://github.com/bit4woo'
+
+#http://0cx.cc/about_awvs11_api.jspx
+'''
+targetURL = "https://127.0.0.1:3443/api/v1/targets"
+scanning_profile = "https://127.0.0.1:3443/api/v1/scanning_profiles"
+scanURL = "https://127.0.0.1:3443/api/v1/scans"
+scanStatusURL = "https://127.0.0.1:3443/api/v1/scans"
+scanStatusByID = "https://127.0.0.1:3443/api/v1/scans/56d847bc-344b-4513-a960-69e7d1988a46"
+scanStop = "https://127.0.0.1:3443/api/v1/scans/56d847bc-344b-4513-a960-69e7d1988a46/abort"
+https://localhost:3443/api/v1/targets/4696a02a-8b7e-441f-b039-4be476c66552
+
+getReportTemplate = "https://127.0.0.1:3443/api/v1/report_templates"
+genReport = "https://127.0.0.1:3443/api/v1/reports"
+'''
+
 import json
-import hashlib
-import config
+import requests
+import requests.packages.urllib3
+from lib.common import *
+
+'''
+import requests.packages.urllib3.util.ssl_
+requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS = 'ALL'
+
+or 
+
+pip install requests[security]
+'''
+requests.packages.urllib3.disable_warnings()
+
+tarurl = "https://127.0.0.1:3443"
+apikey = "1986ad8c0a5b3df4d7028d5f3c06e936c606563d17c7046798a1f4569c961bc56"
+headers = {"X-Auth": apikey, "content-type": "application/json"}
 
 
-# WVS11 批量添加扫描任务
-
-# localhost:3443全部替换为awvs所在的服务器及端口
-username = config.AWVS_USER_EMAIL
-# 账号邮箱
-password = config.AWVS_PASSWORD
-passhash = hashlib.sha256(password).hexdigest()
-# 以上内容为配置内容，然后把要添加的url列表保存成wvs.txt文件，放在该脚本下运行该脚本。
-ssl._create_default_https_context = ssl._create_unverified_context
-url_login = "https://localhost:3443/api/v1/me/login"
-send_headers_login = {
-    'Host': 'localhost:3443',
-    'Accept': 'application/json, text/plain, */*',
-    'Accept-Language': 'zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3',
-    'Accept-Encoding': 'gzip, deflate, br',
-    'Content-Type': 'application/json;charset=utf-8'
-}
-
-data_login = '{"email":"' + username + '","password":"' + passhash + '","remember_me":false}'
-
-req_login = urllib2.Request(url_login, headers=send_headers_login)
-response_login = urllib2.urlopen(req_login, data_login)
-xauth = response_login.headers['X-Auth']
-COOOOOOOOkie = response_login.headers['Set-Cookie']
-print "当前验证信息如下\r\n cookie : %r  \r\n X-Auth : %r  " % (COOOOOOOOkie, xauth)
-send_headers2 = {
-    'Host': 'localhost:3443',
-    'Accept': 'application/json, text/plain, */*',
-    'Accept-Language': 'zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3',
-    'Content-Type': 'application/json;charset=utf-8',
-    'X-Auth': xauth,
-    'Cookie': COOOOOOOOkie
-}
-
-
-# 以上代码实现登录（获取cookie）和校验值
-def add_exec_scan():
-    url = "https://localhost:3443/api/v1/targets"
+def addTask(url=''):
+    # 添加任务
+    data = {"address": url, "description": url, "criticality": "10"}
     try:
-        urllist = open('wvs.txt', 'r')  # 这是要添加的url列表
-        formaturl = urllist.readlines()
-        for i in formaturl:
-            target_url = 'http://' + i.strip()
-            data = '{"description":"Added by Scripts","address":"' + target_url + '","criticality":"10"}'
-            # data = urllib.urlencode(data)由于使用json格式所以不用添加
-            req = urllib2.Request(url, headers=send_headers2)
-            response = urllib2.urlopen(req, data)
-            jo = json.loads(response.read())
-            target_id = jo['target_id']  # 获取添加后的任务ID
-            # print target_id
-            # 以上代码实现批量添加
+        response = requests.post(tarurl + "/api/v1/targets", data=json.dumps(data), headers=headers, timeout=30,
+                                 verify=False)
+        result = json.loads(response.content)
+        return result['target_id']
+    except Exception as e:
+        print(str(e))
+        return
 
-            url_scan = "https://localhost:3443/api/v1/scans"
-            headers_scan = {
-                'Host': 'localhost:3443',
-                'Accept': 'application/json, text/plain, */*',
-                'Accept-Language': 'zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Content-Type': 'application/json;charset=utf-8',
-                'X-Auth': xauth,
-                'Cookie': COOOOOOOOkie,
-            }
-            data_scan = '{"target_id":' + '\"' + target_id + '\"' + ',"profile_id":"11111111-1111-1111-1111-111111111111","schedule":{"disable":false,"start_date":null,"time_sensitive":false},"ui_session_id":"66666666666666666666666666666666"}'
-            req_scan = urllib2.Request(url_scan, headers=headers_scan)
-            response_scan = urllib2.urlopen(req_scan, data_scan)
-            print response_scan.read() + "添加成功！"
-        # 以上代码实现批量加入扫描
-        urllist.close()
-    except Exception, e:
-        print e
+def getTargetList():
+    # 获取全部的扫描状态
+    targets = []
+    next_cursor=0
+    while True:
+        try:
+            response = requests.get(tarurl + "/api/v1/targets?c="+str(next_cursor), headers=headers, timeout=30, verify=False)
+            results = json.loads(response.content)
+            tmp_next_cursor = results["pagination"]["next_cursor"]
+            for result in results['targets']:
+                targets.append(result['target_id'])
+            if tmp_next_cursor !="null" and tmp_next_cursor!=None:
+                next_cursor = int(tmp_next_cursor)
+                continue
+            return list(set(targets))
+        except Exception as e:
+            raise e
 
+def getScanList():
+    # 获取全部的扫描状态
+    targets = []
+    next_cursor =0
+    while True:
+        try:
+            response = requests.get(tarurl + "/api/v1/scans?c="+str(next_cursor), headers=headers, timeout=30, verify=False)
+            results = json.loads(response.content)
 
-def count():
-    url_count = "https://localhost:3443/api/v1/notifications/count"
-    req_count = urllib2.Request(url_count, headers=send_headers2)
-    response_count = urllib2.urlopen(req_count)
-    print "当前存在%r个通知！" % json.loads(response_count.read())['count']
-    print "-" * 50
-    print "已存在以下任务"
-    url_info = "https://localhost:3443/api/v1/scans"
-    req_info = urllib2.Request(url_info, headers=send_headers2)
-    response_info = urllib2.urlopen(req_info)
-    all_info = json.loads(response_info.read())
-    num = 0
-    for website in all_info.get("scans"):
-        num += 1
-        print website.get("target").get("address") + " \r\n target_id:" + website.get("scan_id")
-    print "共 %r个扫描任务" % num
+            #print results["pagination"]
+            tmp_next_cursor = results["pagination"]["next_cursor"]
+            #print tmp_next_cursor
 
+            for result in results['scans']:
+                targets.append(result['scan_id'])
+                #print "scan list that already exist:"
+                #print result['scan_id'], result['target']['address'], getScanStatus(result['scan_id'])  # ,result['target_id']
+            if tmp_next_cursor !="null" and tmp_next_cursor!=None:
+                next_cursor = tmp_next_cursor
+                continue
+            return list(set(targets))
+        except Exception as e:
+            raise e
 
-# count()
-# scan、target、notification！
-def del_scan():
-    url_info = "https://localhost:3443/api/v1/scans"
-    req_info = urllib2.Request(url_info, headers=send_headers2)
-    response_info = urllib2.urlopen(req_info)
-    all_info = json.loads(response_info.read())
-    counter = 0
-    for website in all_info.get("scans"):
-        # if (website.get("target").get("description"))== "222":
-        url_scan_del = "https://localhost:3443/api/v1/scans/" + str(website.get("scan_id"))
-        req_del = urllib2.Request(url_scan_del, headers=send_headers2)
-        req_del.get_method = lambda: 'DELETE'
-        response_del = urllib2.urlopen(req_del)
-        counter = counter + 1
-        print "已经删除第%r个!" % counter
+def startScan(url):
+    # 添加任务获取target_id
+    # 开始扫描
+    target_id = addTask(url)
+    data = {"target_id": target_id, "profile_id": "11111111-1111-1111-1111-111111111111",
+            "schedule": {"disable": False, "start_date": None, "time_sensitive": False}}
+    try:
+        response = requests.post(tarurl + "/api/v1/scans", data=json.dumps(data), headers=headers, timeout=30,
+                                 verify=False)
+        result = json.loads(response.content)
+        print "{0} added successfully".format(url)
+        return result['target_id']
+    except Exception as e:
+        print(str(e))
+        return
 
 
-# del_scan()			#通过描述判断是否使用扫描器添加扫描器添加的时候设置description=“222”
-def del_targets():
-    url_info = "https://localhost:3443/api/v1/targets"
-    req_info = urllib2.Request(url_info, headers=send_headers2)
-    response_info = urllib2.urlopen(req_info)
-    all_info = json.loads(response_info.read())
-    for website in all_info.get("targets"):
-        if (website.get("description")) == "222":
-            url_scan_del = "https://localhost:3443/api/v1/targets/" + str(website.get("target_id"))
-            req_del = urllib2.Request(url_scan_del, headers=send_headers2)
-            req_del.get_method = lambda: 'DELETE'
-            response_del = urllib2.urlopen(req_del)
-            print "ok!"
+def getScanStatus(scan_id):
+    # 获取scan_id的扫描状况
+    try:
+        response = requests.get(tarurl + "/api/v1/scans/" + str(scan_id), headers=headers, timeout=30, verify=False)
+        result = json.loads(response.content)
+        status = result['current_session']['status']
+        # 如果是completed 表示结束.可以生成报告
+        if status == "completed":
+            return getReport(scan_id)
+        else:
+            return result['current_session']['status']
+    except Exception as e:
+        print(str(e))
+        return
 
 
-# del_targets()
-if __name__ == "__main__":
-    print "*" * 20
-    count()
-    print "1、使用wvs.txt添加扫描任务并执行请输入1，然后回车\r\n2、删除所有使用该脚本添加的任务请输入2，然后回车\r\n3、删除所有任务请输入3，然后回车\r\n4、查看已存在任务请输入4，然后回车\r\n"
-    choice = raw_input(">")
-    #	print type(choice)
+def getReport(scan_id):
+    # 获取scan_id的扫描报告
+    data = {"template_id": "11111111-1111-1111-1111-111111111111",
+            "source": {"list_type": "scans", "id_list": [scan_id]}}
+    try:
+        response = requests.post(tarurl + "/api/v1/reports", data=json.dumps(data), headers=headers, timeout=30,
+                                 verify=False)
+        result = response.headers
+        report = result['Location'].replace('/api/v1/reports/', '/reports/download/')
+        return tarurl.rstrip('/') + report
+    except Exception as e:
+        print(str(e))
+        return
 
-    if choice == "1":
-        add_exec_scan()
-        count()
-    elif choice == "2":
-        del_targets()
-        count()
-    elif choice == "3":
-        del_scan()
-        count()
-    elif choice == "4":
-        count()
-    else:
-        print "请重新运行并请输入1、2、3、4选择。"
+def AddScans(url_list):
+    targets = strip_list(getScanList())
+    url_list = strip_list(url_list)
 
-# 下图的注释信息是删除通知。。
-"""	
-	counter= 0
-	for website in all_info.get("notifications"):
-		if (website["data"].get("address")== "www.ly.com"):
-			counter = counter + 1
-			url_del = "https://localhost:3443/api/v1/scans/"+str(website["data"].get("scan_id"))
-			print url_del#print url_del
-			req_del = urllib2.Request(url_del,headers=send_headers2)
-			 #DELETE方法
-			try:
-				req_del.get_method = lambda:"DELETE"
-				response1 = urllib2.urlopen(req_del)
+    for url in url_list:
+        if url in targets:
+            print "{0} already in scan list,skip".format(url)
+        else:
+            id = startScan(url)
+            getReport(id)
 
-			except:
-				print "error"
-				continue
-	print counter
-			#print response1.read()
-	#for address in need_info["address"]
-	#	if address
-del_all()
-"""
+    return url_list.index(url)+1
+
+def delTargets(target_id_list):
+    "https://localhost:3443/api/v1/targets/4696a02a-8b7e-441f-b039-4be476c66552"
+    proxy ={"http":"http://127.0.0.1:8080","https":"https://127.0.0.1:8080"}
+    for target_id in target_id_list:
+        url =  tarurl + "/api/v1/targets/" + str(target_id)
+        response = requests.delete(tarurl + "/api/v1/targets/" + str(target_id), headers=headers, timeout=30, verify=False,proxies =proxy)
+        #print response.content
+
+def delScans(Scan_id_list):
+    for scan_id in Scan_id_list:
+        response = requests.delete(tarurl + "/api/v1/scans/" + str(scan_id), headers=headers, timeout=30, verify=False)
+        #print response.content
+
+if __name__ == '__main__':
+    urls = ["http://www.baidu.com",'http://testhtml5.vulnweb.com/']
+    print AddScans(urls)
+    #delScans(getScanList())
+    #delTargets(getTargetList())

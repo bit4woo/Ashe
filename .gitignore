@@ -2,3 +2,4 @@
 *.pyc
 .idea/
 history.txt
+lib/config.py
